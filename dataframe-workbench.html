@@ -305,6 +305,40 @@ table.grid { border-collapse: separate; border-spacing: 0; font: 12.5px/1.35 var
   .chart-box { min-height: 320px; }
   .boot { position: fixed; }
 }
+
+/* ---------- learn tab: DataFrame anatomy explorer */
+.learn { overflow: auto; }
+.learn-intro { margin: 0; color: var(--muted); max-width: 70ch; }
+.anat-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.anat-chip {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 5px 12px;
+  font: 12.5px var(--font-mono); cursor: pointer; color: var(--ink);
+}
+.anat-chip:hover { border-color: var(--accent); }
+.anat-chip[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); color: var(--accent); }
+.anat-body { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+.anat-left { display: flex; flex-direction: column; gap: 8px; min-width: 0; max-width: 100%; overflow-x: auto; }
+.anat-caption { font-size: 11.5px; color: var(--muted); }
+table.anat { border-collapse: separate; border-spacing: 0; font: 13px/1.3 var(--font-mono); font-variant-numeric: tabular-nums; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+table.anat th, table.anat td { padding: 7px 14px; text-align: right; border-bottom: 1px solid var(--line); transition: background 0.12s, color 0.12s; }
+table.anat thead th { color: var(--muted); font-weight: 400; }
+table.anat tbody th { font-weight: 500; color: var(--muted); background: var(--sunk); }
+table.anat tr:last-child td, table.anat tr:last-child th { border-bottom: 0; }
+table.anat td.nan { color: var(--mark); }
+table.anat tfoot td { color: var(--muted); font-size: 11px; border-bottom: 0; border-top: 1px solid var(--line); padding-block: 5px; }
+table.anat tfoot th { border: 0; background: none; }
+table.anat .hl { background: var(--accent); color: var(--accent-ink); }
+table.anat td.hl.nan { color: var(--accent-ink); }
+table.anat td.soft { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+table.anat tfoot td.hl { background: var(--accent); color: var(--accent-ink); }
+table.anat td:hover, table.anat th:hover { outline: 1px solid var(--accent); outline-offset: -1px; }
+.anat-shape { font: 12.5px var(--font-mono); color: var(--muted); }
+.anat-shape b { color: var(--ink); font-weight: 500; }
+.anat-card { flex: 1 1 320px; max-width: 520px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.anat-card h3 { margin: 0; font: 600 14px var(--font-mono); color: var(--accent); }
+.anat-card p { margin: 0; color: var(--muted); }
+.anat-card pre { margin: 0; background: var(--sunk); border-radius: var(--r); padding: 9px 12px; font: 12.5px/1.4 var(--font-mono); overflow-x: auto; white-space: pre; }
+.anat-card .acts { display: flex; gap: 6px; flex-wrap: wrap; }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
@@ -352,11 +386,12 @@ table.grid { border-collapse: separate; border-spacing: 0; font: 12.5px/1.35 var
       <button role="tab" data-tab="summary" aria-selected="false">Summary</button>
       <button role="tab" data-tab="chart" aria-selected="false">Chart</button>
       <button role="tab" data-tab="console" aria-selected="false">Console</button>
+      <button role="tab" data-tab="learn" aria-selected="false">Learn</button>
     </nav>
 
     <section class="panel" id="tab-table">
       <div class="banner" id="exampleBanner" hidden>
-        <span><code>orders</code> is example data generated with NumPy, so there's something to explore. Open or drop a file to work on your own.</span>
+        <span><code>orders</code> is example data generated with NumPy, so there's something to explore. Open or drop a file to work on your own. New to pandas? Try the <a href="#" id="toLearn">Learn tab</a>.</span>
         <button class="btn small ghost" id="dismissBanner">Dismiss</button>
       </div>
       <form class="toolbar" id="viewForm" autocomplete="off">
@@ -439,6 +474,24 @@ table.grid { border-collapse: separate; border-spacing: 0; font: 12.5px/1.35 var
             <button class="btn" id="restartBtn" title="Clears every variable">Restart Python</button>
             <button class="btn primary" id="runBtn">Run</button>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel learn" id="tab-learn" hidden>
+      <p class="learn-intro">A DataFrame is a labelled table. Pick an expression to see which part of it you get back. This small example is separate from your data, and hovering any cell shows how to reach it.</p>
+      <div class="anat-chips" id="anatChips" role="group" aria-label="Expressions to explore"></div>
+      <div class="anat-body">
+        <div class="anat-left">
+          <table class="anat" id="anatTable"></table>
+          <div class="anat-caption">df — hover any cell</div>
+          <div class="anat-shape"><span>shape <b>(4, 4)</b></span> &nbsp; <span>ndim <b>2</b></span> &nbsp; <span>size <b>16</b></span></div>
+        </div>
+        <div class="anat-card" aria-live="polite">
+          <h3 id="anatTitle"></h3>
+          <p id="anatDesc"></p>
+          <pre id="anatOut"></pre>
+          <div class="acts"><button class="btn small" id="anatTry">Try it in the console</button></div>
         </div>
       </div>
     </section>
@@ -1573,7 +1626,7 @@ $("#restartBtn").addEventListener("click", async () => {
 function switchTab(tab) {
   S.tab = tab;
   $$(".tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === tab));
-  ["table", "summary", "chart", "console"].forEach((t) => ($(`#tab-${t}`).hidden = t !== tab));
+  ["table", "summary", "chart", "console", "learn"].forEach((t) => ($(`#tab-${t}`).hidden = t !== tab));
   if (!S.frame || !S.info) return;
   if (tab === "summary") loadSummary().catch((err) => toast(err.message, true));
   if (tab === "chart") { setupChartControls(); drawChart(); }
@@ -1588,6 +1641,120 @@ $("#dismissBanner").addEventListener("click", () => {
   $("#exampleBanner").hidden = true;
   try { localStorage.setItem("dfwb-banner", "off"); } catch {}
 });
+
+/* ------------------------------------------------------------ learn: anatomy explorer */
+const ANAT = {
+  rows: ["a", "b", "c", "d"],
+  cols: ["item", "qty", "price", "in_stock"],
+  dtypes: ["object", "int64", "float64", "bool"],
+  data: [["bolt", "120", "0.25", "True"], ["nut", "80", "0.10", "True"], ["gear", "15", "NaN", "False"], ["shaft", "4", "12.50", "True"]],
+};
+const ANAT_SERIES = (rows, name, vals, dt) =>
+  rows.map((r, i) => `${r}  ${vals[i]}`).join("\n") + `\nName: ${name}, dtype: ${dt}`;
+const ANAT_FRAME = (rowIdx, colIdx) => {
+  const head = ["", ...colIdx.map((c) => ANAT.cols[c])];
+  const body = rowIdx.map((r) => [ANAT.rows[r], ...colIdx.map((c) => ANAT.data[r][c])]);
+  const w = head.map((_, j) => Math.max(head[j].length, ...body.map((b) => b[j].length)));
+  const fmt = (row) => row.map((v, j) => (j === 0 ? v.padEnd(w[j]) : v.padStart(w[j]))).join("  ");
+  return [fmt(head), ...body.map(fmt)].join("\n");
+};
+const ANAT_CHIPS = [
+  { code: "df.index", title: "df.index", desc: "Row labels — an Index object. Arithmetic aligns on these labels.",
+    out: "Index(['a', 'b', 'c', 'd'], dtype='object')", hl: { rowHead: true } },
+  { code: "df.columns", title: "df.columns", desc: "Column labels — also an Index. Every column has a name and exactly one dtype.",
+    out: "Index(['item', 'qty', 'price', 'in_stock'], dtype='object')", hl: { colHead: true } },
+  { code: "df.values", title: "df.values", desc: "The cell data as a plain NumPy array, with labels dropped. Mixed dtypes collapse to object.",
+    out: "array([['bolt', 120, 0.25, True],\n       ['nut', 80, 0.1, True],\n       ['gear', 15, nan, False],\n       ['shaft', 4, 12.5, True]], dtype=object)", hl: { cells: [0, 1, 2, 3].flatMap((r) => [0, 1, 2, 3].map((c) => [r, c])) } },
+  { code: "df['price']", title: "df['price']", desc: "One column by name. You get a Series that keeps the row labels. NaN marks a missing value.",
+    out: ANAT_SERIES(ANAT.rows, "price", ["0.25", "0.10", "NaN", "12.50"], "float64"), hl: { cols: [2] } },
+  { code: "df.loc['b']", title: "df.loc['b']", desc: ".loc selects by label. One row label gives a Series indexed by the column names.",
+    out: "item        nut\nqty          80\nprice       0.1\nin_stock   True\nName: b, dtype: object", hl: { rows: [1] } },
+  { code: "df.iloc[1:3, 0:2]", title: "df.iloc[1:3, 0:2]", desc: ".iloc selects by position, counting from 0. Slices stop before the end: rows 1–2 and columns 0–1.",
+    out: ANAT_FRAME([1, 2], [0, 1]), hl: { cells: [1, 2].flatMap((r) => [0, 1].map((c) => [r, c])) } },
+  { code: "df[df['qty'] > 50]", title: "df[df['qty'] > 50]", desc: "Boolean filtering. The comparison makes a True/False value per row, and df[...] keeps the True rows.",
+    out: ANAT_FRAME([0, 1], [0, 1, 2, 3]), hl: { rows: [0, 1], soft: { cols: [1] } } },
+  { code: "df.dtypes", title: "df.dtypes", desc: "The data type of every column. Pandas stores each column as one type, which is why mixed data needs separate columns.",
+    out: "item         object\nqty           int64\nprice       float64\nin_stock       bool\ndtype: object", hl: { dtypeRow: true } },
+];
+let anatSel = 0;
+
+function buildAnat() {
+  const A = ANAT;
+  $("#anatTable").innerHTML =
+    `<thead><tr><th></th>${A.cols.map((c, j) => `<th data-c="${j}" scope="col">${c}</th>`).join("")}</tr></thead>` +
+    `<tbody>${A.rows.map((r, i) => `<tr><th data-r="${i}" scope="row">${r}</th>${A.data[i].map((v, j) =>
+      `<td data-r="${i}" data-c="${j}"${v === "NaN" ? ' class="nan"' : ""}>${v}</td>`).join("")}</tr>`).join("")}</tbody>` +
+    `<tfoot><tr><th></th>${A.dtypes.map((d, j) => `<td data-c="${j}" data-dt="1">${d}</td>`).join("")}</tr></tfoot>`;
+  $("#anatChips").innerHTML = ANAT_CHIPS.map((c, i) =>
+    `<button class="anat-chip" data-i="${i}" aria-pressed="false">${esc(c.code)}</button>`).join("");
+  showAnat(0);
+}
+
+function showAnat(i, hover) {
+  const t = $("#anatTable");
+  $$(".hl, .soft", t).forEach((el) => el.classList.remove("hl", "soft"));
+  let c, h;
+  if (hover) {
+    c = hover; h = hover.hl;
+    $$("#anatChips .anat-chip").forEach((b) => b.setAttribute("aria-pressed", "false"));
+  } else {
+    anatSel = i; c = ANAT_CHIPS[i]; h = c.hl;
+    $$("#anatChips .anat-chip").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.i === i)));
+  }
+  const cell = (r, col) => $(`td[data-r="${r}"][data-c="${col}"]`, t);
+  if (h.rowHead) $$("tbody th", t).forEach((e) => e.classList.add("hl"));
+  if (h.colHead) $$("thead th[data-c]", t).forEach((e) => e.classList.add("hl"));
+  if (h.dtypeRow) $$("tfoot td", t).forEach((e) => e.classList.add("hl"));
+  (h.cols || []).forEach((col) => {
+    $(`thead th[data-c="${col}"]`, t).classList.add("hl");
+    $$(`td[data-c="${col}"]:not([data-dt])`, t).forEach((e) => e.classList.add("hl"));
+  });
+  (h.rows || []).forEach((r) => {
+    $(`tbody th[data-r="${r}"]`, t).classList.add("hl");
+    $$(`td[data-r="${r}"]`, t).forEach((e) => e.classList.add("hl"));
+  });
+  (h.cells || []).forEach(([r, col]) => cell(r, col).classList.add("hl"));
+  if (h.soft && h.soft.cols) h.soft.cols.forEach((col) =>
+    $$(`td[data-c="${col}"]:not([data-dt])`, t).forEach((e) => e.classList.add("soft")));
+  $("#anatTitle").textContent = c.title;
+  $("#anatDesc").textContent = c.desc;
+  $("#anatOut").textContent = c.out;
+  $("#anatTry").hidden = !!hover;
+}
+
+function anatHover(el) {
+  const r = el.dataset.r, col = el.dataset.c;
+  if (el.matches("tbody th")) {
+    const l = ANAT.rows[r];
+    return { title: `df.loc['${l}']`, desc: `Row label '${l}' is position ${r}. This is row ${l} as a Series.`, out: `df.iloc[${r}]  is the same row`, hl: { rows: [+r] } };
+  }
+  if (el.matches("thead th")) {
+    const n = ANAT.cols[col];
+    return { title: `df['${n}']`, desc: `Column '${n}' has dtype ${ANAT.dtypes[col]}.`, out: `df.iloc[:, ${col}]  is the same column`, hl: { cols: [+col] } };
+  }
+  if (el.dataset.dt) {
+    return { title: `df.dtypes['${ANAT.cols[col]}']`, desc: "Every column holds one dtype.", out: ANAT.dtypes[col], hl: { cols: [+col] } };
+  }
+  const rl = ANAT.rows[r], cn = ANAT.cols[col], v = ANAT.data[r][col];
+  return { title: `df.loc['${rl}', '${cn}']`, desc: `One cell: row '${rl}', column '${cn}'. By position that is df.iloc[${r}, ${col}].`,
+    out: v === "NaN" ? "nan  (a missing value)" : v, hl: { cells: [[+r, +col]] } };
+}
+
+$("#anatChips").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-i]");
+  if (b) showAnat(+b.dataset.i);
+});
+$("#anatTable").addEventListener("mouseover", (e) => {
+  const el = e.target.closest("td, th");
+  if (el && (el.dataset.r || el.dataset.c)) showAnat(0, anatHover(el));
+});
+$("#anatTable").addEventListener("mouseleave", () => showAnat(anatSel));
+$("#anatTry").addEventListener("click", () => {
+  const f = S.frame || "orders";
+  openInConsole(ANAT_CHIPS[anatSel].code.replaceAll("df", f));
+});
+$("#toLearn").addEventListener("click", (e) => { e.preventDefault(); switchTab("learn"); });
+buildAnat();
 
 /* ------------------------------------------------------------ files */
 const EXTRA_PACKAGES = { xlsx: ["openpyxl"], xls: ["xlrd"], parquet: ["pyarrow"] };

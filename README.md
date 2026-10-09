@@ -11,6 +11,7 @@ A DataFrame Workbench: real [pandas](https://pandas.pydata.org/) running entirel
 - **Inspect** dtypes, per-column profiles and `describe()` summaries.
 - **Chart** a frame (bar, histogram, time series and more) with Chart.js.
 - **Run Python** against the loaded frames. `pd` and `np` are already imported.
+- **Learn tab**: an interactive DataFrame anatomy explorer for new users. Pick `df.index`, `df.loc['b']`, `df[df['qty'] > 50]` and similar to see which part of a small example table each one returns, hover any cell to see how to reach it, then send the expression to the console.
 - **Show the code**: loading and exporting a file reports the equivalent pandas call.
 - **Export** a frame to CSV, JSON, Excel or Parquet.
 - **Sample data**: a generated `orders` dataset (600 rows) is built on start so there is something to explore.
